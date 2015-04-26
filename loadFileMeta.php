@@ -15,7 +15,7 @@ foreach($lines as $line){
  if(!in_array($category,$categories)) $category = "Other";
  if(!$category_employ_map[$category]) $category_employ_map[$category]=array();
  $output="\n$category,$folderName";
- file_put_contents("category_employee_folders.txt",$output,FILE_APPEND);
+ file_put_contents("cache/category_employee_folders.txt",$output,FILE_APPEND);
  $category_employ_map[$category][]=$folderName; 	
 }
 
@@ -24,12 +24,12 @@ foreach($category_employ_map as $category=>$folderNames){
   foreach($folderNames as $folderName){
 	$directory = "enron_mail_20110402/maildir/$folderName";
 	$files=array();
-	file_put_contents("category_employeeId.txt",$line,FILE_APPEND);
 	echo "\nsearching $directory";
 	exec("find $directory -name *.",$files);
 	foreach($files as $file){
 		$line="\n$category, $file";
-		file_put_contents("category_file.txt",$line,FILE_APPEND);
+	        file_put_contents("cache/category_employeeId.txt",$line,FILE_APPEND);
+
 	}
   }
  }
