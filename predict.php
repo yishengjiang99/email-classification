@@ -6,47 +6,51 @@ while($l=fgets($fr)){
   if(!$lt[1]) continue;
   $filename=trim($lt[1]);
   $category=$lt[0];
+  if(strpos($filename,"sent")===false) continue;
   if(rand(0,1000)<=60) $testingSet[$filename]=$category;
 }
 
-$featureVector = json_decode(file_get_contents('cache/normalized_vector.json'),1);
-foreach($testingSet as $filename =>$category){
-// $fileContent=file_get_contents($filename);
- foreach($featureVector as $word =>$info){
-	$word_category_significance=$info[2]/($info[2]+$info[3]+0.001); //ghetto smoothing
-	echo "\n$word $cateogry $word_category_significance";
+$categories=explode(", ","CEO, Director, Vice President, Trader, Manager, Employee, Other");
+
+$featureVector = json_decode(file_get_contents('cache/feature_vectors.json'),1);
+
+foreach($testingSet as $filename =>$actual_category){
+ $scores = array();
+ $highscore=0;  $prediction="";
+ $fileContent=file_get_contents($filename);
+ echo "\n";
+ foreach($categories as $testingForThisCategory){
+   $n=0;
+   foreach($featureVector as $word=>$infoArray)
+   {
+	$p_hit=$infoArray[$testingForThisCategory];	
+	if(!$p_hit) continue;
+	$p_miss=average_percent_in_other($infoArray,$testingForThisCategory);
+	$word_category_significance=(float)($p_hit+0.00001)/($p_hit+$p_miss+0.00001); //ghetto smoothing
 	if(stripos($fileContent,$word)!==false){
-			
+		$log_score=log(1-$word_category_significance)-log($word_category_significance);	
+		$n+=$log_score;
 	}
+    }
+    $scores[$testingForThisCategory]=1/(1+exp($n));
+    echo round($scores[$testingForThisCategory],5).",";   
+    if($scores[$testingForThisCategory]>$highscore){
+	$highscore=$scores[$testingForThisCategory];
+	$prediction=$testingForThisCategory;
+    }
  }
+ $correct = $prediction==$actual_category ? "correct" : "incorrect";
+ echo "$prediction, $actual_category, $correct";
 }
 
-exit;
-$categories=explode(", ","CEO, Director, Vice President, Trader, Manager, Employee");
-
-foreach($categories as $category){
- $category = trim($category);
- foreach($featureVector as $word=>$wordInfo){
-   $n_fectureVector[$word][$category]=array(0,0,0,0); //
-   $file_scaned_incategory=0;
-   $file_scaned_non_cata=0; 
-   foreach($wordInfo as $wordCategory =>$count){
-	if($wordCategory==$category) {
-		$n_fectureVector[$word][$category][0]+=$count;
-		$file_scaned_incategory+=$countVector[$category];
-	}
-	else {
-		$n_fectureVector[$word][$category][1]+=$count;
-		$file_scaned_non_cata+=$countVector[$wordCategory];
-	}
+function average_percent_in_other($categoryInfo,$theCategory){
+  $total=0;$count=0;
+  foreach($categoryInfo as $category=>$percent){
+    if($theCategory!=$category){
+	$total+=$percent;
+	$count++;
+    }
   }
-  $n_fectureVector[$word][$category][2] = (float)$n_fectureVector[$word][$category][0]/$file_scaned_incategory;
-  $n_fectureVector[$word][$category][3] = (float)$n_fectureVector[$word][$category][1]/$file_scaned_non_cata;
- }
+  return (float)$total/$count;
 }
-
-file_put_contents("cache/normalized_feature_vector.json",$n_fectureVector);
-
-
-
-
+exit;

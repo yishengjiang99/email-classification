@@ -1,5 +1,5 @@
 <?php
-$categories=explode(", ","CEO, Director, Vice President, Trader, Manager, Employee");
+$categories=explode(", ","CEO, Director, Vice President, Trader, Manager, Employee, Other");
 $stopwords = file_get_contents("stopwordslsit.txt");
 $stopwords = implode("|",explode("\n",trim($stopwords)));
 foreach($categories as $category){
